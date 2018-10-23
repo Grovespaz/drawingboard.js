@@ -27,15 +27,17 @@ DrawingBoard.Board = function(id, opts) {
 		return false;
 
 	var tpl = '<div class="drawing-board-canvas-wrapper"></canvas><canvas class="drawing-board-canvas"></canvas><div class="drawing-board-cursor drawing-board-utils-hidden"></div></div>';
-	if (this.opts.controlsPosition.indexOf("bottom") > -1) tpl += '<div class="drawing-board-controls"></div>';
-	else tpl = '<div class="drawing-board-controls"></div>' + tpl;
+	if(this.opts.controlsPosition != "manual") {
+		if (this.opts.controlsPosition.indexOf("bottom") > -1) tpl += '<div class="drawing-board-controls"></div>';
+		else tpl = '<div class="drawing-board-controls"></div>' + tpl;
+	}
 
 	this.$el.addClass('drawing-board').append(tpl);
 	this.dom = {
 		$canvasWrapper: this.$el.find('.drawing-board-canvas-wrapper'),
 		$canvas: this.$el.find('.drawing-board-canvas'),
 		$cursor: this.$el.find('.drawing-board-cursor'),
-		$controls: this.$el.find('.drawing-board-controls')
+		$controls: this.opts.controlsPosition != "manual" ? this.$el.find('.drawing-board-controls') : this.opts.controlsElement
 	};
 
 	$.each(['left', 'right', 'center'], $.proxy(function(n, val) {
@@ -56,6 +58,8 @@ DrawingBoard.Board = function(id, opts) {
 	}
 
 	this.storage = this._getStorage();
+
+	this.fillProxy = $.proxy(this.fill, this);
 
 	this.initHistory();
 	//init default board values before controls are added (mostly pencil color and size)
@@ -424,7 +428,7 @@ DrawingBoard.Board.prototype = {
 		silent = silent || false;
 		newMode = newMode || 'pencil';
 
-		this.ev.unbind('board:startDrawing', $.proxy(this.fill, this));
+		this.ev.unbind('board:startDrawing', this.fillProxy);
 
 		if (this.opts.eraserColor === "transparent")
 			this.ctx.globalCompositeOperation = newMode === "eraser" ? "destination-out" : "source-over";
@@ -439,7 +443,7 @@ DrawingBoard.Board.prototype = {
 			}
 
 			if (newMode === "filler")
-				this.ev.bind('board:startDrawing', $.proxy(this.fill, this));
+				this.ev.bind('board:startDrawing', this.fillProxy);
 		}
 		this.mode = newMode;
 		if (!silent)
@@ -642,7 +646,7 @@ DrawingBoard.Board.prototype = {
 
 	_onMouseOver: function(e, coords) {
 		this.isMouseHovering = true;
-		this.coords.old = this._getInputCoords(e);
+		this.coords.old = coords;
 		this.coords.oldMid = this._getMidInputCoords(this.coords.old);
 
 		this.ev.trigger('board:mouseOver', {e: e, coords: coords});

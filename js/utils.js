@@ -65,7 +65,11 @@ DrawingBoard.Utils.MicroEvent.prototype = {
 	unbind : function(event, fct){
 		this._events = this._events || {};
 		if( event in this._events === false  )	return;
-		this._events[event].splice(this._events[event].indexOf(fct), 1);
+		var ix = this._events[event].indexOf(fct);
+		if(ix == -1) {
+			return;
+		}
+		this._events[event].splice(ix, 1);
 	},
 	trigger : function(event /* , args... */){
 		this._events = this._events || {};
